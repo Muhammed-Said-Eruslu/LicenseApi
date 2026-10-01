@@ -1,3 +1,4 @@
+﻿using Domain.Entities;
 using Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -40,10 +41,10 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "License API",
         Version = "v1",
-        Description = "Lisans olu�turma ve do�rulama API'si"
+        Description = "Lisans oluşturma ve doğrulama API'si"
     });
 
-    // Swagger i�in Bearer JWT Auth
+    // Swagger için Bearer JWT Auth
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -51,7 +52,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "JWT Authorization header. �rnek: 'Bearer {token}'"
+        Description = "JWT Authorization header. Örnek: 'Bearer {token}'"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -85,6 +86,25 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
+
+    // İlk admin hesabı: AdminSeed:Email ve AdminSeed:Password ortam değişkeni / user-secrets ile verilir.
+    // Kod içinde sabit parola tutulmaz; ayar yoksa admin oluşturulmaz.
+    var adminEmail = builder.Configuration["AdminSeed:Email"];
+    var adminPassword = builder.Configuration["AdminSeed:Password"];
+    if (!string.IsNullOrWhiteSpace(adminEmail) && !string.IsNullOrWhiteSpace(adminPassword))
+    {
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        var admin = await userManager.FindByEmailAsync(adminEmail);
+        if (admin == null)
+        {
+            admin = new AppUser { UserName = adminEmail, Email = adminEmail };
+            var created = await userManager.CreateAsync(admin, adminPassword);
+            if (!created.Succeeded)
+                throw new InvalidOperationException("Admin oluşturulamadı: " + string.Join(", ", created.Errors.Select(e => e.Description)));
+        }
+        if (!await userManager.IsInRoleAsync(admin, "ADMIN"))
+            await userManager.AddToRoleAsync(admin, "ADMIN");
+    }
 }
 
 app.UseHttpsRedirection();
@@ -106,4 +126,4 @@ app.Run();
 /*
  "Server=localhost;Database=LisansDb3;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;"
  
- */
+ */

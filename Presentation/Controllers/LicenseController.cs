@@ -18,6 +18,7 @@ namespace Presentation.Controllers
 
         // Lisans doğrulama
         [HttpPost("validate")]
+        [AllowAnonymous] // istemci uygulamalar (örn. OtoArac) token olmadan doğrular
         public async Task<IActionResult> Validate([FromBody] LicenseCheckRequest req)
         {
              var result = await _licenseService.ValidateLicenseAsync(req.LicenseKey, req.MachineId);
@@ -29,7 +30,7 @@ namespace Presentation.Controllers
 
         // Lisans oluşturma (kullanıcı için)
         [HttpPost("generate")]
-        //[Authorize(Roles ="ADMIN")] // sadece admin kullanabilir
+        [Authorize(Roles = "ADMIN")] // sadece admin kullanabilir
         public async Task<IActionResult> Generate([FromBody] GenerateLicenseRequest req)
         {
             var key = await _licenseService.GenerateLicenseAsync(req.Email, req.DurationDays, req.MaxDevices);
@@ -38,7 +39,7 @@ namespace Presentation.Controllers
 
         // Bazı istemciler GET isteği gönderdiğinde 404 almaması için
         [HttpGet("generate")]
-        //[Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN")] // sadece admin kullanabilir
         public async Task<IActionResult> GenerateFromQuery(
             [FromQuery] string email,
             [FromQuery] int durationDays,
@@ -50,7 +51,7 @@ namespace Presentation.Controllers
 
         // Admin: yeni lisans üretme (gelişmiş)
         [HttpPost("issue")]
-        //[Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN")] // sadece admin kullanabilir
         public async Task<IActionResult> Issue([FromBody] IssueLicenseRequest req)
         {
             var key = await _licenseService.IssueLicenseAsync(req);
@@ -59,7 +60,7 @@ namespace Presentation.Controllers
 
         // Admin: lisansı iptal etme
         [HttpPost("revoke")]
-        //[Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN")] // sadece admin kullanabilir
         public async Task<IActionResult> Revoke([FromBody] RevokeRequest req)
         {
             var ok = await _licenseService.RevokeAsync(req.LicenseKey);
@@ -70,7 +71,7 @@ namespace Presentation.Controllers
 
         // Tüm lisansları listeleme
         [HttpGet]
-        //[Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN")] // sadece admin kullanabilir
         public async Task<IActionResult> GetAll()
         {
             var licenses = await _licenseService.GetAllAsync();

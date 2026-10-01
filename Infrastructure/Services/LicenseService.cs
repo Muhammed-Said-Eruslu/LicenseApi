@@ -55,6 +55,10 @@ namespace Infrastructure.Services
             if (license.UsedDevices >= license.MaxDevices)
                 return (false, "Maksimum cihaz limitine ulaşıldı.", license.ExpireAt);
 
+            // Lisans belirli bir makineye/domaine bağlıysa başka bir cihazdan kullanılamaz
+            if (!string.IsNullOrWhiteSpace(license.HostIdentifier) && license.HostIdentifier != machineId)
+                return (false, "Lisans bu cihaz için geçerli değil.", license.ExpireAt);
+
             return (true, "Lisans geçerli.", license.ExpireAt);
         }
 
